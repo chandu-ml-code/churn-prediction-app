@@ -1,0 +1,42 @@
+import pandas as pd
+import pickle
+
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.ensemble import RandomForestClassifier
+
+# load dataset
+df = pd.read_csv("churn.csv")
+
+# clean data
+df.drop("customerID", axis=1, inplace=True)
+df['Churn'] = df['Churn'].map({'Yes': 1, 'No': 0})
+
+# split
+X = df.drop("Churn", axis=1)
+y = df["Churn"]
+
+# column types
+cat_cols = X.select_dtypes(include=['object']).columns
+num_cols = X.select_dtypes(exclude=['object']).columns
+
+# preprocessing
+preprocessor = ColumnTransformer([
+    ("cat", OneHotEncoder(drop='first'), cat_cols),
+    ("num", "passthrough", num_cols)
+])
+
+# pipeline
+pipeline = Pipeline([
+    ("preprocessing", preprocessor),
+    ("model", RandomForestClassifier(n_estimators=100))
+])
+
+# train
+pipeline.fit(X, y)
+
+# save model
+pickle.dump(pipeline, open("pipeline.pkl", "wb"))
+
+print("Done ✅")
